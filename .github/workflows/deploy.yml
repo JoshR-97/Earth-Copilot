@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       force_all:
-        description: 'Force deploy all components'
+        description: "Force deploy all components"
         required: false
         default: false
         type: boolean
@@ -23,8 +23,8 @@ permissions:
 
 # Only resource group and location are fixed - all other resource names are discovered dynamically
 env:
-  RESOURCE_GROUP: rg-earthcopilot
-  LOCATION: eastus2
+  RESOURCE_GROUP: rg-swe-earthcopilot
+  LOCATION: swedencentral
 
 jobs:
   # Detect which components changed
@@ -52,7 +52,7 @@ jobs:
             echo "🔄 Force deploy all components"
             exit 0
           fi
-          
+
           # Get changed files
           if [ "${{ github.event_name }}" == "push" ]; then
             CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
@@ -63,38 +63,38 @@ jobs:
             echo "frontend=true" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
+
           echo "Changed files:"
           echo "$CHANGED_FILES"
-          
+
           # Check each component
           INFRA_CHANGED=false
           BACKEND_CHANGED=false
           FRONTEND_CHANGED=false
-          
+
           if echo "$CHANGED_FILES" | grep -q "^earth-copilot/infra/"; then
             INFRA_CHANGED=true
           fi
-          
+
           if echo "$CHANGED_FILES" | grep -q "^earth-copilot/container-app/"; then
             BACKEND_CHANGED=true
           fi
-          
+
           if echo "$CHANGED_FILES" | grep -q "^earth-copilot/web-ui/"; then
             FRONTEND_CHANGED=true
           fi
-          
+
           # If workflow file changed, deploy all
           if echo "$CHANGED_FILES" | grep -q "^.github/workflows/deploy.yml"; then
             INFRA_CHANGED=true
             BACKEND_CHANGED=true
             FRONTEND_CHANGED=true
           fi
-          
+
           echo "infra=$INFRA_CHANGED" >> $GITHUB_OUTPUT
           echo "backend=$BACKEND_CHANGED" >> $GITHUB_OUTPUT
           echo "frontend=$FRONTEND_CHANGED" >> $GITHUB_OUTPUT
-          
+
           echo ""
           echo "📊 Components to deploy:"
           echo "  Infrastructure: $INFRA_CHANGED"
@@ -125,11 +125,11 @@ jobs:
       - name: Deploy Infrastructure with Bicep
         run: |
           cd earth-copilot
-          
+
           DEPLOYMENT_NAME="earthcopilot-$(date +%Y%m%d-%H%M%S)"
-          
+
           echo "🚀 Deploying Infrastructure..."
-          
+
           az deployment sub create \
             --location "${{ env.LOCATION }}" \
             --template-file infra/main.bicep \
@@ -140,29 +140,29 @@ jobs:
             --parameters containerImage="" \
             --name "$DEPLOYMENT_NAME" \
             --output none
-          
+
           echo "✅ Infrastructure deployed"
 
       - name: Discover Resource Names
         id: discover
         run: |
           echo "🔍 Discovering deployed resource names..."
-          
+
           # Discover Container Registry
           ACR_NAME=$(az acr list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
           echo "container_registry_name=$ACR_NAME" >> $GITHUB_OUTPUT
           echo "  ✅ Container Registry: $ACR_NAME"
-          
+
           # Discover Container App
           CA_NAME=$(az containerapp list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
           echo "container_app_name=$CA_NAME" >> $GITHUB_OUTPUT
           echo "  ✅ Container App: $CA_NAME"
-          
+
           # Discover Web App
           WA_NAME=$(az webapp list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
           echo "web_app_name=$WA_NAME" >> $GITHUB_OUTPUT
           echo "  ✅ Web App: $WA_NAME"
-          
+
           # Get Container App URL
           if [ -n "$CA_NAME" ]; then
             CA_URL=$(az containerapp show --name "$CA_NAME" --resource-group ${{ env.RESOURCE_GROUP }} --query "properties.configuration.ingress.fqdn" -o tsv)
@@ -197,7 +197,7 @@ jobs:
         id: discover
         run: |
           echo "🔍 Discovering resource names..."
-          
+
           # Discover Container Registry
           ACR_NAME=$(az acr list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
           if [ -z "$ACR_NAME" ]; then
@@ -207,7 +207,7 @@ jobs:
           fi
           echo "container_registry_name=$ACR_NAME" >> $GITHUB_OUTPUT
           echo "  ✅ Container Registry: $ACR_NAME"
-          
+
           # Discover Container App Environment
           CAE_NAME=$(az containerapp env list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
           if [ -z "$CAE_NAME" ]; then
@@ -217,7 +217,7 @@ jobs:
           fi
           echo "container_app_env_name=$CAE_NAME" >> $GITHUB_OUTPUT
           echo "  ✅ Container App Environment: $CAE_NAME"
-          
+
           # Discover Container App (may not exist yet on first deploy)
           CA_NAME=$(az containerapp list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
           if [ -z "$CA_NAME" ]; then
@@ -233,33 +233,33 @@ jobs:
         id: deploy
         run: |
           echo "🐳 Building and deploying backend..."
-          
+
           ACR_NAME="${{ steps.discover.outputs.container_registry_name }}"
           CAE_NAME="${{ steps.discover.outputs.container_app_env_name }}"
           CA_EXISTS="${{ steps.discover.outputs.container_app_exists }}"
           CA_NAME="${{ steps.discover.outputs.container_app_name }}"
-          
+
           cd earth-copilot/container-app
-          
+
           # Build and push image
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           IMAGE_TAG="$TIMESTAMP"
-          
+
           az acr build \
             --registry "$ACR_NAME" \
             --image "earthcopilot-api:$IMAGE_TAG" \
             --image "earthcopilot-api:latest" \
             --file Dockerfile.complete \
             ../
-          
+
           echo "✅ Image built: ${ACR_NAME}.azurecr.io/earthcopilot-api:$IMAGE_TAG"
-          
+
           # Get ACR login server
           ACR_LOGIN_SERVER=$(az acr show \
             --name "$ACR_NAME" \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --query "loginServer" -o tsv)
-          
+
           if [ "$CA_EXISTS" == "true" ]; then
             # Update existing Container App
             echo "📦 Updating existing Container App..."
@@ -293,8 +293,11 @@ jobs:
               echo "  ⚠️ No Azure OpenAI found - app will use fallback settings"
             fi
             
+            # Install App Insights extension
+            az extension add --name application-insights
+
             # Get Application Insights connection string
-            APPINSIGHTS_NAME=$(az monitor app-insights component list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
+            APPINSIGHTS_NAME=$(az monitor app-insights component show --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
             if [ -n "$APPINSIGHTS_NAME" ]; then
               APPINSIGHTS_CS=$(az monitor app-insights component show --app "$APPINSIGHTS_NAME" --resource-group ${{ env.RESOURCE_GROUP }} --query "connectionString" -o tsv)
               echo "  ✅ Found Application Insights: $APPINSIGHTS_NAME"
@@ -364,15 +367,15 @@ jobs:
             
             echo "✅ Managed identity configured for ACR pull"
           fi
-          
+
           echo "container_app_name=$CA_NAME" >> $GITHUB_OUTPUT
-          
+
           # Get URL
           CONTAINER_APP_URL=$(az containerapp show \
             --name "$CA_NAME" \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" -o tsv)
-          
+
           echo "container_app_url=https://$CONTAINER_APP_URL" >> $GITHUB_OUTPUT
           echo "✅ Backend deployed to: https://$CONTAINER_APP_URL"
 
@@ -397,8 +400,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: earth-copilot/web-ui/package-lock.json
 
       - name: Azure Login
@@ -410,7 +413,7 @@ jobs:
         id: discover
         run: |
           echo "🔍 Discovering resource names..."
-          
+
           # Discover Container App
           CA_NAME=$(az containerapp list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
           if [ -z "$CA_NAME" ]; then
@@ -419,7 +422,7 @@ jobs:
           fi
           echo "container_app_name=$CA_NAME" >> $GITHUB_OUTPUT
           echo "  ✅ Container App: $CA_NAME"
-          
+
           # Discover or create Web App
           WA_NAME=$(az webapp list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv)
           if [ -z "$WA_NAME" ]; then
@@ -450,7 +453,7 @@ jobs:
           MAPS_ACCOUNT=$(az maps account list \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "[0].name" -o tsv)
-          
+
           if [ -n "$MAPS_ACCOUNT" ]; then
             MAPS_KEY=$(az maps account keys list \
               --name "$MAPS_ACCOUNT" \
@@ -467,10 +470,10 @@ jobs:
         id: deploy
         run: |
           echo "🎨 Building and deploying frontend..."
-          
+
           WA_NAME="${{ steps.discover.outputs.web_app_name }}"
           WA_EXISTS="${{ steps.discover.outputs.web_app_exists }}"
-          
+
           # Create Web App if it doesn't exist
           if [ "$WA_EXISTS" != "true" ]; then
             echo "🆕 Creating new Web App..."
@@ -510,15 +513,15 @@ jobs:
             
             echo "  ✅ Configured Web App settings"
           fi
-          
+
           cd earth-copilot/web-ui
-          
+
           # Install and build with environment variables
           npm ci
           VITE_API_BASE_URL="${{ steps.get-backend-url.outputs.backend_url }}" \
           VITE_AZURE_MAPS_SUBSCRIPTION_KEY="${{ steps.get-maps-key.outputs.maps_key }}" \
           npm run build
-          
+
           # Create server for App Service
           cat > dist/server.js << 'EOF'
           const express = require('express');
@@ -529,35 +532,36 @@ jobs:
           app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
           app.listen(port, () => console.log('Server running on port ' + port));
           EOF
-          
+
           cat > dist/package.json << 'EOF'
           {"name":"earth-copilot-ui","version":"1.0.0","main":"server.js","scripts":{"start":"node server.js"},"dependencies":{"express":"^4.18.0"}}
           EOF
-          
+
           cd dist
           npm install --production
           zip -r ../deploy.zip .
           cd ..
-          
+
           # Deploy to App Service
           az webapp deploy \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --name "$WA_NAME" \
             --src-path deploy.zip \
             --type zip
-          
+
           WEB_URL=$(az webapp show \
             --resource-group "${{ env.RESOURCE_GROUP }}" \
             --name "$WA_NAME" \
             --query "defaultHostName" -o tsv)
-          
+
           echo "web_app_url=https://$WEB_URL" >> $GITHUB_OUTPUT
           echo "✅ Frontend deployed to: https://$WEB_URL"
 
   # Summary
   summary:
     name: Deployment Summary
-    needs: [detect-changes, deploy-infrastructure, deploy-backend, deploy-frontend]
+    needs:
+      [detect-changes, deploy-infrastructure, deploy-backend, deploy-frontend]
     if: always()
     runs-on: ubuntu-latest
     environment: dev
@@ -571,13 +575,13 @@ jobs:
         run: |
           echo "# 🚀 Earth Copilot Deployment" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           echo "## 📊 Components Deployed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           echo "| Component | Changed | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----------|---------|--------|" >> $GITHUB_STEP_SUMMARY
-          
+
           # Infrastructure
           if [ "${{ needs.detect-changes.outputs.infra }}" == "true" ]; then
             if [ "${{ needs.deploy-infrastructure.result }}" == "success" ]; then
@@ -588,7 +592,7 @@ jobs:
           else
             echo "| Infrastructure | ⏭️ No | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           # Backend
           if [ "${{ needs.detect-changes.outputs.backend }}" == "true" ] || [ "${{ needs.detect-changes.outputs.infra }}" == "true" ]; then
             if [ "${{ needs.deploy-backend.result }}" == "success" ]; then
@@ -599,7 +603,7 @@ jobs:
           else
             echo "| Backend | ⏭️ No | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           # Frontend
           if [ "${{ needs.detect-changes.outputs.frontend }}" == "true" ] || [ "${{ needs.detect-changes.outputs.infra }}" == "true" ]; then
             if [ "${{ needs.deploy-frontend.result }}" == "success" ]; then
@@ -610,22 +614,22 @@ jobs:
           else
             echo "| Frontend | ⏭️ No | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🌐 Endpoints" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Discover actual resource names and URLs
           WA_NAME=$(az webapp list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv 2>/dev/null || echo "")
           CA_NAME=$(az containerapp list --resource-group ${{ env.RESOURCE_GROUP }} --query "[0].name" -o tsv 2>/dev/null || echo "")
-          
+
           if [ -n "$WA_NAME" ]; then
             WEB_URL=$(az webapp show --resource-group ${{ env.RESOURCE_GROUP }} --name "$WA_NAME" --query "defaultHostName" -o tsv)
             echo "- **Frontend**: https://$WEB_URL" >> $GITHUB_STEP_SUMMARY
           else
             echo "- **Frontend**: ⚠️ Not deployed yet" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ -n "$CA_NAME" ]; then
             CA_URL=$(az containerapp show --resource-group ${{ env.RESOURCE_GROUP }} --name "$CA_NAME" --query "properties.configuration.ingress.fqdn" -o tsv)
             echo "- **Backend API**: https://$CA_URL" >> $GITHUB_STEP_SUMMARY
