@@ -45,7 +45,7 @@ param deployAIFoundry bool = true
 param deployAIServices bool = true
 
 var abbrs = loadJsonContent('./abbreviations.json')
-var resourceToken = toLower(uniqueString(subscription().environmentName))
+var resourceToken = toLower(uniqueString(subscription().id, environmentName))
 var tags = {
   'azd-env-name': environmentName
   'azd-app-name': 'earth-copilot'
