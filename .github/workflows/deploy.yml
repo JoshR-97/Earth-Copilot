@@ -133,7 +133,7 @@ jobs:
           az deployment sub create \
             --location "${{ env.LOCATION }}" \
             --template-file infra/main.bicep \
-            --parameters environmentName="earthcopilot" \
+            --parameters environmentName="earthcopilot-new" \
             --parameters location="${{ env.LOCATION }}" \
             --parameters deployAIFoundry=true \
             --parameters deployAIServices=true \
