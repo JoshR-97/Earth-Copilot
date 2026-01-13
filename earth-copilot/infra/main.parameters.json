@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "environmentName": {
-      "value": "earthcopilot-jr"
+      "value": "earthcopilot"
     },
     "location": {
       "value": "swedencentral"
