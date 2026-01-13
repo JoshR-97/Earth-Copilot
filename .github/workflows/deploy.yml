@@ -23,7 +23,7 @@ permissions:
 
 # Only resource group and location are fixed - all other resource names are discovered dynamically
 env:
-  RESOURCE_GROUP: rg-earthcopilot-new
+  RESOURCE_GROUP: rg-earthcopilot-jr
   LOCATION: swedencentral
 
 jobs:
