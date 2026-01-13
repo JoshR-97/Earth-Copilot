@@ -42,10 +42,10 @@ variables:
   
   # Azure resource group name (will be created if it doesn't exist)
   # Format: rg-{environment} is recommended
-  AZURE_RESOURCE_GROUP: "rg-earthcopilot-dev"
+  AZURE_RESOURCE_GROUP: "rg-earthcopilot-jr"
   
   # Azure region for all resources
-  AZURE_LOCATION: "eastus"
+  AZURE_LOCATION: "swedencentral"
   
   # Environment name prefix for resource naming
   ENVIRONMENT_NAME: "earthcopilot-dev"
