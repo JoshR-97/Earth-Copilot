@@ -26,12 +26,12 @@ from semantic_translator import SemanticQueryTranslator
 from titiler_config import get_tile_scale  # Legacy tile scale function
 from hybrid_rendering_system import HybridRenderingSystem  # 🎨 Comprehensive rendering system
 from tile_selector import TileSelector  # 🎯 Smart tile selection and ranking
-from quickstart_cache import (
-    is_quickstart_query, 
-    get_quickstart_classification, 
-    get_quickstart_location,
-    get_quickstart_stats
-)  # 🚀 Pre-computed cache for demo queries
+#from quickstart_cache import (
+#    is_quickstart_query, 
+#    get_quickstart_classification, 
+#    get_quickstart_location,
+#    get_quickstart_stats
+#)  # 🚀 Pre-computed cache for demo queries
 
 # ============================================================================
 # � INSTANT PIPELINE TRACING - Collect steps for API response
