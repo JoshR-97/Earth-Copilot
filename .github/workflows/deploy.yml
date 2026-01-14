@@ -23,7 +23,7 @@ permissions:
 
 # Only resource group and location are fixed - all other resource names are discovered dynamically
 env:
-  RESOURCE_GROUP: rg-earthcopilot-josh-001
+  RESOURCE_GROUP: rg-earthcopilot-josh
   LOCATION: swedencentral
 
 jobs:
@@ -133,7 +133,7 @@ jobs:
           az deployment sub create \
             --location "${{ env.LOCATION }}" \
             --template-file infra/main.bicep \
-            --parameters environmentName="earthcopilot-jr" \
+            --parameters environmentName="earthcopilot-josh" \
             --parameters location="${{ env.LOCATION }}" \
             --parameters deployAIFoundry=true \
             --parameters deployAIServices=true \
